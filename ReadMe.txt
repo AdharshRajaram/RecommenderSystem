@@ -1,0 +1,1 @@
+This project builds a recommender system for any historical data that is uploaded using a UI built by Rshiny.
