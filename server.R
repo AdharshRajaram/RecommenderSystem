@@ -190,7 +190,7 @@ contents<-reactive({
   
   
   model<-reactive({
-    Build$e<-evaluationScheme(Build$r,method="split",train=1,given=-200,goodRating=1)
+    Build$e<-evaluationScheme(Build$r,method="split",train=0.9,given=-20,goodRating= Build$GR)
     if(Build$method=="Auto"){
       Build$UBCF_mod<-Recommender(getData(Build$e,"train"),method="UBCF")
       Build$POPULAR_mod<-Recommender(getData(Build$e,"train"),method="POPULAR")
@@ -398,7 +398,7 @@ contents<-reactive({
         Build$error.selmod<-error.selmod
       }
       }
-      Build$selectmod<-Build$IBCF_mod
+     # Build$selectmod<-Build$IBCF_mod
       Build$complete<-TRUE
     }
     
@@ -449,18 +449,19 @@ contents<-reactive({
       Test$TestData<-read.csv(Test$infile3$datapath) 
       Test$Nuser<-unique(Test$TestData[,1])
       Test$NItem<-length(unique(Test$TestData[,3]))
+      
       Test$r <- as(Test$TestData[,c(1,3,5)],"realRatingMatrix") 
-      
-      
       coltrain<-colnames(Build$r)
       coltest<-colnames(Test$r)
       if(length(setdiff(coltest,coltrain))>0){
         stop("Some Items in test data are were not in train data")
-        }
+      }
       coltoadd<-setdiff(coltrain,coltest)
       coltoadd<-matrix(data=NA,nrow = nrow(Test$r),ncol =length(coltoadd),dimnames=list(NULL,coltoadd) )
       Test$r<-cbind(as(Test$r,"matrix"),coltoadd)
-      Test$r<-as(Test$r,"realRatingMatrix")
+       
+      
+      
       
       #print(nrow(Test$r))
       #print(str(Test$r))
@@ -477,6 +478,11 @@ contents<-reactive({
     if(!is.null(input$TopN)){
       
       Test$Finish<-FALSE
+   
+      Test$r<-as(Test$r,"realRatingMatrix") 
+      Test$r<-Test$r[rownames(Test$r)==input$UserID]
+      
+          
       Test$result<-predict(Build$selectmod,newdata=Test$r,type="topNList",n=input$TopN)
       #Test$result<-predict(Build$selectmod,newdata=getData(Build$e,"known"),type="topNList",n=input$TopN)
       
@@ -490,6 +496,9 @@ contents<-reactive({
       }
       ItemDescription<-Build$trainData[index,4]
       PreRating<-Test$result@ratings[names(Test$result@ratings)==input$UserID][[1]]
+      i<-which(PreRating<1)
+      PreRating[i]<-1
+      round(PreRating,1)
       Test$Finish<-TRUE
       FinalResult<-as.data.frame(cbind(RecItems,as.character(ItemDescription),PreRating))
       print(FinalResult)
